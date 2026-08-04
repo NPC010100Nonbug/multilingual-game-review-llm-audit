@@ -1,0 +1,14 @@
+# Multilingual game-review LLM project — dependencies
+#
+# Installed in phases so we don't pull heavy packages before we need them.
+# This file covers Phase 2–5 (collection, cleaning, sampling, LLM labeling) —
+# the work that happens on the Mac.
+#
+# The training packages (torch, transformers, datasets, evaluate, accelerate,
+# scikit-learn) live in a SEPARATE `requirements-train.txt` and are installed
+# on the ASUS laptop (RTX 4060) only when we reach the training stage.
+
+requests          # HTTP calls to the Steam public reviews API
+pandas            # tabular data: build/clean reviews.csv, join label tables
+python-dotenv     # load the API key from .env (key never goes in the repo)
+tqdm              # progress bars for collection / labeling loops
