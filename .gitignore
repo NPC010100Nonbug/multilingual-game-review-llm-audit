@@ -2,5 +2,6 @@
 .venv/
 data/raw/
 data/processed/
+freeze/anchor_review_sheet.md
 .DS_Store
 __pycache__/

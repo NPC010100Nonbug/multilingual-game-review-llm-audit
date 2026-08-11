@@ -1,14 +1,14 @@
 # HANDOFF — 多语言游戏评论 LLM(感知不公平)训练项目
 
 > 目的:让**下一个全新对话**不看历史也能无缝接手。
-> 更新时间:2026-08-05。维护人:Yifan(GitHub `NPC010100Nonbug`)。
+> 更新时间:2026-08-11。维护人:Yifan(GitHub `NPC010100Nonbug`)。
 > 仓库:`~/Documents/multilingual-game-review-llm-audit`。
 
 ---
 
 ## 0. 一句话现状
 
-**Phase 1(环境/探针)+ Phase 2(Steam 采集)已完成并提交(commit `12e710f`)。当前入口:Phase 3 —— 先写 codebook(标注规范),再写 `02_align_sample.py`(对齐+分层抽样)。**
+**Phase 1(环境/探针)+ Phase 2(Steam 采集)已完成并提交(commit `12e710f`);codebook 已冻结 `v1.0`(2026-08-10);gold 抽样方案已冻结(2026-08-11,三语等额 200 + Steam 语言桶 + 从轻资格过滤);`02_align_sample.py` 已物化机械合格帧(419,827 行)并**已抽 gold ID(2026-08-11,600 条,单向门已跨,只落 review_id、未读文本)**。当前入口:**prompt 冻结流程**(冻结后才可打开 gold 文本做人工标注)/ 压力集预注册(见 `~/Desktop/gold抽样与压力集_方案讨论_2026-08-10.md` §9)。dev/train 尚未切。**
 
 ---
 
@@ -72,7 +72,9 @@
 
 ## 4. 由此确定的对齐方案(Phase 3 的 `02_` 要实现的)
 
-**在每款游戏的"共同窗口"内做跨语言比较。**
+> ⚠️ **本节的"共同窗口 + 按月对齐到 JA 降采"方案已于 2026-08-11 作废,勿再实现。** 原因:按 JA 每月直方图降采会把 JA/CS2 饿死,且强行对齐时间反而丢掉大量数据。**现行方案** = 物化 `machine_eligible_frame`(时间窗 `≤2026-08-01`、主池不设下界、从轻内容过滤、Steam 语言桶)→ gold 用**三语等额 200/语言 + 语言内按游戏比例**抽 → 加权还原;**研究对象 = 当前语料环境表现,不主张剥离游戏/时代的纯语言效应**;时间不可比作为 limitation 如实记录,标准化比较降为补充结果。完整规则见 `~/Desktop/gold抽样与压力集_方案讨论_2026-08-10.md` 与仓库 `data_split_spec.md`。下面保留旧方案仅供追溯。
+
+**~~在每款游戏的"共同窗口"内做跨语言比较。~~**(已作废,见上)
 - 共同窗口 = 三语言各自"最旧日期"里**最晚的那个**(交集)。三款都由**中文**卡住左边界:
   - CS2 ≈ 2026-03 → now(~5 个月)
   - BF2042 ≈ 2023-11 → now(~2.7 年)
@@ -90,10 +92,10 @@
 
 ## 5. 待办(Phase 3 起)
 
-0. **数据池切分**(所有标注/训练的地基,规格已定):见 `data_split_spec.md`。五个互不重叠角色 `pilot_draft / pilot_prompt / gold / dev / train`;**唯一铁律 = gold 对开发全程隐身**;①②分开只是防自欺;全靠 `data/splits/split_manifest.csv`(review_id→role,已跟踪进 git)焊死,`SPLIT_SEED=20260806`。待建脚本:`02a_make_pilot.py`(切两个 pilot)、`02_align_sample.py`(切 gold/dev/train)。
-1. **codebook / 标注规范**(建议先做):把"perceived unfairness"拆成可操作维度(匹配/对局机制、付费与数值、惩罚与封禁、客服与退款、外挂环境……),每维配正例;**最关键是反例**("难 ≠ 不公平""单纯发泄 ≠ 指认不公平")。已定标签方案见 decision_log(2026-07-28):**二元主标签 unfair=1/0 + 单独 `uncertain` 标志位**。
-2. **`02_align_sample.py`**:实现 §4 的"共同窗口 + 按月分层降采到 JA"。
-3. **人工 gold 标注**(每语言 ≥100,盲标,按冻结的 codebook,**永不训练**)。
+0. **数据池切分**(所有标注/训练的地基,规格已定):见 `data_split_spec.md`。五个互不重叠角色 `pilot_draft / pilot_prompt / gold / dev / train`;**唯一铁律 = gold 对开发全程隐身**;①②分开只是防自欺;全靠 `data/splits/split_manifest.csv`(review_id→role,已跟踪进 git)焊死,`SPLIT_SEED=20260806`。✅ pilot(488)+ gold(600)已切;`02_align_sample.py` 已建并跑;dev/train 待从帧剩余切。
+1. **codebook / 标注规范**:✅ **已冻结 `v1.0`(2026-08-10)**,见 `codebook/codebook_claude_v1.md`。主标签 `PRESENT/ABSENT/NA` + `subtype{distributive,procedural}` + facet 误差分析层。
+2. ✅ **`02_align_sample.py`(2026-08-11 已跑 `--draw-gold`)**:物化 `machine_eligible_frame`(419,827 行:EN 317,226 / ZH 91,952 / JA 10,649)→ 在真帧上算定 9-cell → gold **三语等额 200 + 语言内按游戏比例(最大余数法)= 600 行**已入 manifest;设计权重(EN≈2.26/ZH≈0.66/JA≈0.076)→ `gold_design_weights.csv`,候补顺序 → `gold_reserve_order.csv`(419,227 行)。**只落 review_id、未读文本(单向门已跨)。旧的"按月降采到 JA"已作废(§4)。dev/train 仍待切。**
+3. **人工 gold 标注**(每语言 100 codable,盲标,**prompt 冻结之后**才读 gold 文本,按冻结的 codebook,**永不训练**)。
 4. **LLM 双标注**:弱标注(训练用)+ zero-shot(eval 用);**付费前估成本+确认**。
 5. **微调 `xlm-roberta-base`(ASUS)**;三方 eval + 跨语言迁移矩阵。
 6. **README**:诚实写"审计→训练"的由来 + 记录 Steam API 深度天花板这条 limitation。

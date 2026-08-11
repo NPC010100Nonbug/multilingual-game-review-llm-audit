@@ -17,13 +17,17 @@
 
 | 角色 | manifest 里的 `role` | 规模(每语言) | 用途 | 谁可以碰 | 从哪切 |
 |---|---|---|---|---|---|
-| 起草 pilot | `pilot_draft` | 30–50 | AI 读它 → 写 codebook 的定义 / inclusion / exclusion / 例子 | 你 + AI | 原始池(对齐前即可) |
+| 起草 pilot | `pilot_draft` | 30–50/语言(**实际已扩至合计 353**,见下注) | AI 读它 → 写 codebook 的定义 / inclusion / exclusion / 例子 | 你 + AI | 原始池(对齐前即可) |
 | prompt 调试 pilot | `pilot_prompt` | 30–50 | 调 LLM 标注 prompt,调到听话再冻结 | 你 + LLM | 原始池(对齐前即可) |
-| **gold 测试集** | `gold` | **≥100** | **盲评**,考 LLM zero-shot / 微调模型准不准 | **开发期谁都不许碰** | 对齐池 |
-| dev 集 | `dev` | 50–100 | 选模型 / 调超参 | 训练期 | 对齐池 |
-| 训练集 | `train` | 上千 | LLM 弱标注 → 喂微调 | 训练期 | 对齐池(剩余全部) |
+| **gold 测试集** | `gold` | **每语言 100 codable**(首批各抽 200 raw) | **盲评**,考 LLM zero-shot / 微调模型准不准 | **开发期谁都不许碰** | 机械合格帧 |
+| dev 集 | `dev` | 50–100 | 选模型 / 调超参 | 训练期 | 机械合格帧 |
+| 训练集 | `train` | 上千 | LLM 弱标注 → 喂微调 | 训练期 | 机械合格帧(剩余全部) |
 
 > **规模是当前计划,冻结前可再调**;改了就更新本表 + decision_log。
+>
+> **⚠️ 抽样方案更新(2026-08-11,取代旧"按月对齐到 JA"设计):** gold 的抽样帧不再叫"对齐池",改为 **`machine_eligible_frame`(机械合格帧)** = raw 去重 + 时间窗(`timestamp_created ≤ 2026-08-01`、主池不设下界)+ 从轻内容过滤(仅剔空/纯符号,不设长度阈)+ **Steam 语言桶**(信任 Steam `language` 字段、不跑 langid、不做事后 language_match 排除)。gold 用 **三语等额 200/语言 + 语言内按游戏比例(最大余数法)** 抽,加权还原语料级数字;**研究对象 = 当前语料环境表现,不主张剥离游戏/时代的纯语言效应**。**HANDOFF.md §4 的"共同窗口 + 按月直方图对齐到 JA 降采"已作废(JA/CS2 会被饿死)。** 完整规则与冻结记录见 `~/Desktop/gold抽样与压力集_方案讨论_2026-08-10.md`(§7/§8,🔒 2026-08-11 已签)。
+>
+> **注:`pilot_draft` 实际规模(2026-08-10)= 合计 353**(270 随机 + 83 三批目的性补样:distributive 18 / procedural 44 / 跨语言补缺 20)。远超上表初始 30–50/语言——因冻结前需足够证据做 facet 的 `support_volume` / 语言覆盖判定,且 `pilot_draft` **不参与测量**、目的性补样合法(已披露为非随机,见 codebook §9.2)。**gold 规模仍按上表(≥100/语言 codable)。**
 
 ---
 
@@ -51,19 +55,21 @@
 ### 切分顺序(严格按此,保证 Tier 1 firewall)
 
 ```
-Phase 3a(现在,对齐前):
+Phase 3a(已完成,建帧前):
   ① 从原始池切 pilot_draft   → 写 manifest
   ② 从原始池切 pilot_prompt  → 写 manifest(减去 ①)
 
-Phase 3b(02_align_sample.py 之后,从对齐池切,每步都减去 manifest 已有):
-  ③ gold  ≥100   ← 先切、切完立即隔离
+Phase 3b(02_align_sample.py 之后,物化 machine_eligible_frame,每步都减去 manifest 已有):
+  ③ gold  ← 三语等额 200/语言,先切、切完立即隔离(只落 review_id、不读文本)
   ④ dev   50–100
-  ⑤ train = 对齐池剩余全部
+  ⑤ train = 机械合格帧剩余全部
 ```
 
-> 为什么 pilot 可以在对齐前切:codebook 定义"什么算不公平"与时间窗口无关(construct 是 window-independent),
-> 所以起草不必等对齐。gold/dev/train 必须来自对齐池(跨语言可比)。
-> 无论 pilot 是否落在对齐窗口内,**后减前**都能保证它不会溜进 gold/train。
+> ⚠️ **顺序防泄漏(2026-08-11 强化)**:③ 切 gold **ID** 可以在冻结 prompt 之前(只落 review_id、不读文本);但**打开 gold 文本、人工标注必须在 prompt 冻结之后**——否则先读考题再出题,gold 独立性被污染。见 gold 抽样备忘 §1。
+>
+> 为什么 pilot 可以在建帧前切:codebook 定义"什么算不公平"与时间窗口无关(construct 是 window-independent),
+> 所以起草不必等建帧。gold/dev/train 必须来自 **machine_eligible_frame**(同一抽样帧)。
+> 无论 pilot 是否落在时间窗内,**后减前**都能保证它不会溜进 gold/train。
 
 ---
 
@@ -87,6 +93,8 @@ Phase 3b(02_align_sample.py 之后,从对齐池切,每步都减去 manifest 已�
 
 ## 6. 状态
 
-- [ ] `scripts/02a_make_pilot.py`:切 `pilot_draft` + `pilot_prompt`,写 manifest(Phase 3a,待建)
-- [ ] `scripts/02_align_sample.py`:对齐池 + 切 `gold`/`dev`/`train`(Phase 3b,待建)
-- [ ] `data/splits/split_manifest.csv`:待第一次运行生成
+- [x] **Phase 3a — pilot 已切**:`pilot_draft` 353 + `pilot_prompt` 135 = **488 行**已在 manifest(经 `02a2_expand` + `02a3/02a4/02a5` 三批目的性补样;非 `02a_make_pilot.py` 单脚本,已合规)。
+- [x] **Phase 3b — 机械合格帧已物化**(2026-08-11):`data/processed/machine_eligible_frame.csv`,**419,827 行**(仅 review_id,gitignored)。见 `scripts/02_align_sample.py`。
+- [x] **gold 已抽**(2026-08-11,单向门已跨):三语等额 200 + 语言内按游戏比例(最大余数法),**600 行 gold** 已焊进 manifest;设计权重 → `data/splits/gold_design_weights.csv`,NA 补位顺序 → `data/splits/gold_reserve_order.csv`(419,227 行)。**只落 review_id、未读文本**;文本防火墙:prompt 冻结前不许开 gold 文本。
+- [ ] `dev` / `train`:仍待从机械合格帧剩余里切(后减前减去 488 pilot + 600 gold),另单独执行。
+- **manifest 现状**:`data/splits/split_manifest.csv` = **1089 行**(600 gold / 353 pilot_draft / 135 pilot_prompt)。`SPLIT_SEED=20260806`,每 cell 种子 `f"{SPLIT_SEED}-{appid}-{lang}"`,可复现。
