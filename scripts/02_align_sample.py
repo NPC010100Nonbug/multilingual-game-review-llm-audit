@@ -64,6 +64,7 @@ WINDOW_CUTOFF = int(datetime(2026, 8, 1, tzinfo=timezone.utc).timestamp())
 SPLITS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "splits")
 PROCESSED_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "processed")
 MANIFEST = os.path.join(SPLITS_DIR, "split_manifest.csv")
+RESERVED_IDS = os.path.join(SPLITS_DIR, "reserved_ids.csv")
 FRAME_CSV = os.path.join(PROCESSED_DIR, "machine_eligible_frame.csv")
 RESERVE_CSV = os.path.join(SPLITS_DIR, "gold_reserve_order.csv")
 WEIGHTS_CSV = os.path.join(SPLITS_DIR, "gold_design_weights.csv")
@@ -86,6 +87,16 @@ def load_manifest():
         return []
     with open(MANIFEST, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+
+def load_reserved_ids():
+    """review_ids parked in reserved_ids.csv (empty set if no file) — reserved
+    OUTSIDE split_manifest (e.g. the English hard-negative arm) and subtracted
+    by every 后减前 carve so they can never fall into gold/dev/train/stress."""
+    if not os.path.exists(RESERVED_IDS):
+        return set()
+    with open(RESERVED_IDS, newline="", encoding="utf-8") as f:
+        return {str(r["review_id"]) for r in csv.DictReader(f)}
 
 
 def build_frame(assigned):
@@ -260,7 +271,7 @@ def main():
     args = ap.parse_args()
 
     rows = load_manifest()
-    assigned = {r["review_id"] for r in rows}
+    assigned = {r["review_id"] for r in rows} | load_reserved_ids()
     print(f"manifest: {len(rows)} rows already assigned "
           f"({sum(r['role']=='pilot_draft' for r in rows)} pilot_draft, "
           f"{sum(r['role']=='pilot_prompt' for r in rows)} pilot_prompt)")

@@ -1,0 +1,19 @@
+review_id,appid,lang,curated_tag,reason
+138975097,1517290,en,distributive,HAVE TO BUY THE ELITE for basic content (pay-to-unlock)
+207539435,1517290,en,distributive,weapons/vehicles locked behind Elite edition + premium currency
+141902653,1517290,en,distributive,everything locked behind a paywall
+148928031,1517290,en,distributive,pay-to-win store framing
+140004357,1517290,en,distributive_border,$120 Ultimate edition but must still buy Premium battle pass
+164972778,1517290,en,hard_negative,"battle pass is cosmetic, no gameplay impact (cosmetic != advantage)"
+202517276,1517290,zh,distributive,elite edition unlocks only 10 guns; store blurb of 35 is misleading
+165149867,1517290,zh,distributive,guns locked behind battle-pass level
+202254837,1517290,zh,distributive,buy elite edition to skip grinding for guns (pay-to-skip-grind)
+225992615,730,zh,distributive_claim,accusation: don't pay -> dealt bad hands every match
+227223824,730,zh,hard_negative,"no pay-to-win crush, skill wins (fairness norm stated positively)"
+229241969,730,zh,hard_negative,no forced spending breaks match balance
+111128390,1245620,ja,distributive,Japanese pay the world's highest price (regional pricing)
+111096605,1245620,ja,distributive,"Namco おま国 exploitation, 9240 yen highest of all regions"
+121372217,1245620,ja,distributive,region-locked and domestic-only price very high
+111214517,1245620,ja,distributive,おま値: forced to pay $20+ more than other countries
+113317778,1245620,ja,distributive,Japan-only high price
+115896598,1245620,ja,distributive,no explanation for domestic price premium vs overseas

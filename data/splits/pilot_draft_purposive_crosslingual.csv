@@ -1,0 +1,21 @@
+review_id,appid,lang,curated_tag,reason
+230265639,1245620,en,unfair_by_design,artificial difficulty inflation of buffered inputs / enemies phasing through attacks
+224450185,1245620,en,unfair_by_design,"nonsense troll design, input reading fake difficulty; gave it many 'fair shakes'"
+221548261,1245620,en,unfair_by_design,bosses have unfair advantages a normal player can't counter; clears overworld fine (not skill)
+230299621,1245620,en,unfair_by_design,up=1 review: 'instead of fair fights' one-shot gimmicks / input reading; hard for wrong reasons
+230587480,1245620,zh,unfair_by_design,"精英怪读指令+无限精力=作弊AI,理不尽设计(详尽)"
+231333698,1245620,zh,unfair_by_design,神经刀/预输入/读指令等不正当机制
+227213259,1245620,zh,unfair_by_design,"招式不可躲+数值畸高+超长连段,恶意理不尽难度"
+217797587,1517290,en,sanction,"accused of cheating then banned, 'unlawfully' stripped paid access; never cheated"
+202942525,1517290,en,sanction,"perma-banned for unknown TOS violation; appealed, pointless"
+202880727,1517290,en,sanction,"account hacked then perma-banned; appealed 3 times, denied"
+194187711,1517290,ja,sanction,"ソロでAI相手に誤BAN,処罰不公"
+129681583,1517290,ja,sanction,無チートでBAN、問い合わせ返信なし(申訴無門)
+109029583,1517290,ja,sanction,未使用でオートエイム扱い垢ban、申訴無効、返金要求
+201569269,1517290,ja,access_exclusion,secure boot 強制;非対応マザボは締め出し(JAで唯一の実例、up=1)
+225680958,1517290,en,competitive_balance,pay-to-win gun (MK-4) with no balancing
+203001509,1517290,en,competitive_balance,OP guns locked behind a paywall (paid PvP edge)
+202937972,1517290,en,competitive_balance,matchmaking lopsided: opposing team special forces vs your team clueless
+162341785,1517290,ja,competitive_balance,プレイヤーバランス無く常にどちらかの陣営有利、一方的な試合
+159465541,1517290,ja,competitive_balance,競技バランスが前作から退化、一方的な撃ち合い
+178770151,1517290,ja,competitive_balance,up=1: spawn設計+兵器過強で歩兵に対抗手段なく一方的に摺り潰される(構造的)

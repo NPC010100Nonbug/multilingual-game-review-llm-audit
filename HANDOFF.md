@@ -1,14 +1,16 @@
 # HANDOFF — 多语言游戏评论 LLM(感知不公平)训练项目
 
 > 目的:让**下一个全新对话**不看历史也能无缝接手。
-> 更新时间:2026-08-11。维护人:Yifan(GitHub `NPC010100Nonbug`)。
+> 更新时间:2026-08-19。维护人:Yifan(GitHub `NPC010100Nonbug`)。
 > 仓库:`~/Documents/multilingual-game-review-llm-audit`。
 
 ---
 
 ## 0. 一句话现状
 
-**Phase 1(环境/探针)+ Phase 2(Steam 采集)已完成并提交(commit `12e710f`);codebook 已冻结 `v1.0`(2026-08-10);gold 抽样方案已冻结(2026-08-11,三语等额 200 + Steam 语言桶 + 从轻资格过滤);`02_align_sample.py` 已物化机械合格帧(419,827 行)并**已抽 gold ID(2026-08-11,600 条,单向门已跨,只落 review_id、未读文本)**。当前入口:**prompt 冻结流程**(冻结后才可打开 gold 文本做人工标注)/ 压力集预注册(见 `~/Desktop/gold抽样与压力集_方案讨论_2026-08-10.md` §9)。dev/train 尚未切。**
+**Phase 1(环境/探针)+ Phase 2(Steam 采集)已完成;codebook 已冻结 `v1.0`(2026-08-10);gold 抽样方案已冻结(2026-08-11)、gold ID 已抽(600 条,单向门已跨,只落 review_id、未读文本)。当前处于 ➜ prompt 阶段(尚未冻结):**已建成 247 条人工答案键并全部标注完成** —— 135 pilot_prompt(随机 base)+ 32 诊断臂 + 80 硬负例臂,均已抽成可跟踪 jsonl(`data/pilot/*_labels_human.jsonl`)。**下一步 = 在这 247 条上调标注 prompt → 找假阳/假阴 → 迭代 → 由 Yifan 亲手冻结 → 冻结后才打开 gold 文本做人工标注、并上压力集。** 生产阅卷员候选 = **DeepSeek V4 Pro**(成本),铁律见 §5.5。dev/train 尚未切。**
+
+> ⚠️ **英文盲区(English-blindness)** 是本阶段的主线:随机 pilot_prompt 的 8 条 PRESENT **无一为英文**(英文 0 正例)。为此建了两条诊断臂补英文正例(诊断臂 23 PRESENT)与英文硬负例(硬负例臂 71 ABSENT),否则冻结的 prompt 会系统性漏判英文不公平。详见 `decision_log.md` 2026-08-13 起各条。
 
 ---
 
@@ -95,16 +97,24 @@
 0. **数据池切分**(所有标注/训练的地基,规格已定):见 `data_split_spec.md`。五个互不重叠角色 `pilot_draft / pilot_prompt / gold / dev / train`;**唯一铁律 = gold 对开发全程隐身**;①②分开只是防自欺;全靠 `data/splits/split_manifest.csv`(review_id→role,已跟踪进 git)焊死,`SPLIT_SEED=20260806`。✅ pilot(488)+ gold(600)已切;`02_align_sample.py` 已建并跑;dev/train 待从帧剩余切。
 1. **codebook / 标注规范**:✅ **已冻结 `v1.0`(2026-08-10)**,见 `codebook/codebook_claude_v1.md`。主标签 `PRESENT/ABSENT/NA` + `subtype{distributive,procedural}` + facet 误差分析层。
 2. ✅ **`02_align_sample.py`(2026-08-11 已跑 `--draw-gold`)**:物化 `machine_eligible_frame`(419,827 行:EN 317,226 / ZH 91,952 / JA 10,649)→ 在真帧上算定 9-cell → gold **三语等额 200 + 语言内按游戏比例(最大余数法)= 600 行**已入 manifest;设计权重(EN≈2.26/ZH≈0.66/JA≈0.076)→ `gold_design_weights.csv`,候补顺序 → `gold_reserve_order.csv`(419,227 行)。**只落 review_id、未读文本(单向门已跨)。旧的"按月降采到 JA"已作废(§4)。dev/train 仍待切。**
-3. **人工 gold 标注**(每语言 100 codable,盲标,**prompt 冻结之后**才读 gold 文本,按冻结的 codebook,**永不训练**)。
-4. **LLM 双标注**:弱标注(训练用)+ zero-shot(eval 用);**付费前估成本+确认**。
-5. **微调 `xlm-roberta-base`(ASUS)**;三方 eval + 跨语言迁移矩阵。
-6. **README**:诚实写"审计→训练"的由来 + 记录 Steam API 深度天花板这条 limitation。
+3. **⏳ prompt 阶段(当前所在,尚未冻结)**:调参集 = **247 条人工答案键**(135 pilot_prompt + 32 诊断臂 + 80 硬负例臂),已抽成 `data/pilot/{pilot_prompt,diagnostic_arm,hardneg_arm}_labels_human.jsonl`(只 id+标签+facet+短证据跨,无整段正文,`scripts/03f_extract_arm_labels.py` 生成)。流程:对人工标签跑标注 prompt → 找假阳/假阴 → 改 prompt → 迭代 → **Yifan 亲手冻结(个人签名,助手只出可签署草稿,绝不擅自冻结)**。冻结前不得打开 gold/压力集文本。
+4. **人工 gold 标注**(每语言 100 codable,盲标,**prompt 冻结之后**才读 gold 文本,按冻结的 codebook,**永不训练**)。
+5. **LLM 双标注**:弱标注(训练用)+ zero-shot(eval 用);**付费前估成本+确认**。生产阅卷员候选 = **DeepSeek V4 Pro**,见 §5.5 铁律。
+6. **微调 `xlm-roberta-base`(ASUS)**;三方 eval + 跨语言迁移矩阵。
+7. **README**:诚实写"审计→训练"的由来 + 记录 Steam API 深度天花板这条 limitation。
+
+### 5.5 阅卷员模型铁律(选 DeepSeek V4 Pro 后必须守)
+- **调 == 冻 == 部署,必须同一个带版本号的模型。** 若用 DeepSeek V4 Pro 打标,则 prompt 必须**在 DeepSeek V4 Pro 上调、在其上冻结、在其上部署**;**不得**在 Claude 上调好再换 DeepSeek 跑(prompt 会随模型漂移)。
+- **跨模型一致性(附带好处)**:人工答案键部分由 Claude 起草,若再用 Claude 打标会虚高一致率;换 DeepSeek 反而是更严格的跨模型检验。
+- **付费前必确认**:任何 DeepSeek 付费/批量调用前先估成本、报 Yifan 确认;确切型号名与定价待核。
+- 防火墙:诊断臂/硬负例臂 id 已登记进 `data/splits/reserved_ids.csv`,6 个抽样脚本(02/02a/02a2/02a3/02a4/02a5)统一 `assigned = split_manifest ∪ reserved_ids` 后减前,永不落入 gold/dev/train/stress。
 
 ---
 
 ## 6. 关键文档索引
 
-- **数据池切分规格(单一事实源):`data_split_spec.md`(仓库根);名单:`data/splits/split_manifest.csv`。**
+- **数据池切分规格(单一事实源):`data_split_spec.md`(仓库根);名单:`data/splits/split_manifest.csv`;保留区:`data/splits/reserved_ids.csv`。**
+- **prompt 阶段人工答案键(247 条,可跟踪):`data/pilot/{pilot_prompt,diagnostic_arm,hardneg_arm}_labels_human.jsonl`;由 `scripts/03f_extract_arm_labels.py` 从本地 xlsx 抽出。诊断臂/硬负例臂建表脚本:`scripts/06_build_diagnostic_arm.py`、`scripts/07_build_hardneg_arm.py`。**
 - codebook 参考文献库:`codebook/codebook_framework_references.md`。
 - 决策全记录:`decision_log.md`(仓库根)。
 - 训练版指导手册(现行执行文档):`~/Documents/找老板/多语言游戏评论LLM_训练版_项目指导手册_v3_2026-08-04.md`。

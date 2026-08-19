@@ -1,0 +1,46 @@
+review_id,appid,lang,curated_tag,reason
+150161145,1517290,zh,cheating_governance,外挂锁头几百小时都没封号，官方吃屎
+150165754,1517290,zh,cheating_governance,开挂每局都有，EA反外挂比腾讯还差
+150206371,1517290,zh,cheating_governance,只能匹配遇挂只能忍，举报没用
+150211153,1517290,zh,cheating_governance,反作弊反了个寂寞，把把锁头
+150213777,1517290,zh,cheating_governance,亚服挂壁巨多，反作弊系统毫无卵用
+150258942,1517290,zh,cheating_governance,举报是摆设，10级开到100多没封，反作弊是托
+150268645,1517290,zh,cheating_governance,举报无用官方不受理，怀疑没人在运营
+103066720,1517290,ja,cheating_governance,チーターだらけ、取り締まってもアカ作り直しで放置状態
+103119670,1517290,ja,cheating_governance,長年BFのチート放置、開発運営が無能
+103208564,1517290,ja,cheating_governance,怪しいチャットは即アカ停止なのにチーターはLv100超でも放置
+110935440,1245620,ja,unfair_by_design,ワンパン即死、あえて言うがこれは理不尽
+110980549,1245620,ja,unfair_by_design,ボス圧倒的に理不尽、敵の射程異常、遠距離のメリット潰す
+111006379,1245620,ja,unfair_by_design,ボスの理不尽さ際立つ、チェイン即死、徒労感
+111171900,1245620,ja,unfair_by_design,高難易度は間違い、要するに理不尽なだけ
+111210060,1245620,ja,unfair_by_design,敵は常時3~4行動、こちら1行動の間に即死技連打
+111245287,1245620,ja,unfair_by_design,チャリオット触れただけ即死は納得いかない、敵だけ射程届く
+111269280,1245620,ja,unfair_by_design,高難易度と理不尽をはき違えたボス、雑な複数戦
+111335816,1245620,ja,unfair_by_design,クソカメラ地形、2匹ボスの理不尽難易度、性格の悪いゲーム
+111364629,1245620,ja,unfair_by_design,達成感なくただただ理不尽なゲーム
+111373012,1245620,ja,unfair_by_design,終盤は難しいより理不尽が目立つ、後半の雑な調整
+111376155,1245620,ja,unfair_by_design,バランス酷すぎ、理不尽な攻撃にストレス
+111412231,1245620,ja,unfair_by_design,自機はダクソ動作なのに敵はSEKIRO並、ひたすら理不尽
+150223003,1517290,zh,sanction,买没几天连不上，再过两周直接封号
+150224641,1517290,zh,sanction,玩五小时无缘无故被封号，申诉没用退款无门
+150257085,1517290,zh,sanction,大陆玩家别买，EA账户很容易被封禁
+150327632,1517290,zh,sanction,举报作弊无回信，举报言论隔天邮件称不采取行动
+150974310,1517290,zh,sanction,号被乱封，正经外挂不封、我却被封
+150989951,1517290,zh,sanction,付完款库里没戏，申诉一天没解决没退款
+151030953,1517290,zh,sanction,傻逼EA不当人乱封号
+151032914,1517290,zh,sanction,被封号至今未解除，申诉2小时也没用
+151358849,1517290,zh,sanction,打折期间购买玩几天，打折一到就被封号
+151394650,1517290,zh,sanction,EA账号永久封禁，无缘无故没开过挂，申诉不一定通过
+151615816,1517290,zh,sanction,刚玩一天账号就被永久封禁
+103041746,1517290,en,sanction,"banned 3 days for username, stripped of right to play a $90 game"
+151039367,1517290,zh,sanction,APEX没开过挂突然永封，2042全是挂一个不封
+103042299,1517290,en,access_exclusion,secure boot does nothing vs cheaters so the anti-cheat excuse is bollocks
+103062450,1517290,en,access_exclusion,"Unplayable on Linux systems. Get with the times, Dice/EA!"
+103037208,1517290,en,access_exclusion,kernel-level anticheat = malware (intrusive gatekeeping)
+103070453,1517290,en,access_exclusion,f u dice for update requiring ALL players to enable secure boot
+157114225,1517290,zh,access_exclusion,自己没技术防外挂却要玩家开Secure boot，刚氪金完游戏不给进
+163631825,1517290,zh,access_exclusion,举报外挂没用，现在要开Secure boot才能进，开了就死机
+167554716,1517290,zh,access_exclusion,单机玩家却被逼改bios开安全模式，否则玩不了
+150436907,1517290,zh,competitive_balance,匹配机制局局被碾压，这边最高10杀对面人均20
+151023360,1517290,zh,competitive_balance,匹配烂，自家打点掉一百个都进不去载具，对面分分钟平推
+150172993,1517290,zh,competitive_balance,匹配机制烂，对面开载具框框揍、队友载具不出门

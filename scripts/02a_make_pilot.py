@@ -52,6 +52,22 @@ def load_manifest():
         return list(csv.DictReader(f))
 
 
+RESERVED_IDS = os.path.join(SPLITS_DIR, "reserved_ids.csv")
+
+
+def load_reserved_ids():
+    """review_ids parked in reserved_ids.csv (empty set if no file).
+
+    These are ids reserved OUTSIDE split_manifest (e.g. the English
+    hard-negative diagnostic arm) that every future 后减前 carve must ALSO
+    subtract, so a reserved id can never be drawn into gold/dev/train/stress.
+    """
+    if not os.path.exists(RESERVED_IDS):
+        return set()
+    with open(RESERVED_IDS, newline="", encoding="utf-8") as f:
+        return {str(r["review_id"]) for r in csv.DictReader(f)}
+
+
 def raw_ids(appid, lang):
     """All review_ids in data/raw/<appid>_<lang>.jsonl as strings, sorted by
     numeric value so sampling is independent of file line order."""
@@ -81,7 +97,7 @@ def main():
     args = ap.parse_args()
 
     rows = load_manifest()
-    assigned = {r["review_id"] for r in rows}
+    assigned = {r["review_id"] for r in rows} | load_reserved_ids()
     existing_pilot = [r for r in rows if r["role"] in ("pilot_draft", "pilot_prompt")]
     if existing_pilot and not args.force:
         print(f"Pilots already in manifest ({len(existing_pilot)} rows) — nothing to do. "

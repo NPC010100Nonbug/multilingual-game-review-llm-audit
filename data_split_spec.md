@@ -8,20 +8,23 @@
 
 ## 0. 一句话
 
-把同一个原始池按**用途**切成 5 个互不重叠的角色;每条 review 有且仅有一个角色;
-**只有一条隔离是铁律(gold 对开发全程隐身),其余分开只是卫生。** 全靠 review_id 焊死,不靠记性。
+把同一个原始池按**用途**切成 6 个互不重叠的角色;每条 review 有且仅有一个角色;
+**两条隔离是铁律(gold 与 stress 均对开发全程隐身、绝不进训练),其余分开只是卫生。** 全靠 review_id 焊死,不靠记性。
 
 ---
 
-## 1. 五个角色
+## 1. 六个角色
 
 | 角色 | manifest 里的 `role` | 规模(每语言) | 用途 | 谁可以碰 | 从哪切 |
 |---|---|---|---|---|---|
 | 起草 pilot | `pilot_draft` | 30–50/语言(**实际已扩至合计 353**,见下注) | AI 读它 → 写 codebook 的定义 / inclusion / exclusion / 例子 | 你 + AI | 原始池(对齐前即可) |
 | prompt 调试 pilot | `pilot_prompt` | 30–50 | 调 LLM 标注 prompt,调到听话再冻结 | 你 + LLM | 原始池(对齐前即可) |
 | **gold 测试集** | `gold` | **每语言 100 codable**(首批各抽 200 raw) | **盲评**,考 LLM zero-shot / 微调模型准不准 | **开发期谁都不许碰** | 机械合格帧 |
+| **stress 压力集** | `stress` | 诊断集,`N_final`≤300(非每语言均量) | **诊断探针**:罕见/困难例的 PRESENT 召回 / facet 误报,单独报、**绝不进训练、不与 gold 合并** | **开发期谁都不许碰(同 gold)** | 机械合格帧(后减前减 pilot+gold) |
 | dev 集 | `dev` | 50–100 | 选模型 / 调超参 | 训练期 | 机械合格帧 |
 | 训练集 | `train` | 上千 | LLM 弱标注 → 喂微调 | 训练期 | 机械合格帧(剩余全部) |
+
+> **`stress` 是 Tier-1 隔离(与 gold 同级)**:非随机、关键词定向检索的困难例探针;规则见 `freeze/stress_preregistration.md`(v1.1)。富元数据存 `data/splits/stress_final_manifest.csv`,但 **review_id→`role=stress` 必须写回本 manifest**,否则切 train 时会把它当可用数据抽走 = 泄漏。**尚未抽取**(待 prompt 冻结后人工盲标)。
 
 > **规模是当前计划,冻结前可再调**;改了就更新本表 + decision_log。
 >
@@ -60,10 +63,14 @@ Phase 3a(已完成,建帧前):
   ② 从原始池切 pilot_prompt  → 写 manifest(减去 ①)
 
 Phase 3b(02_align_sample.py 之后,物化 machine_eligible_frame,每步都减去 manifest 已有):
-  ③ gold  ← 三语等额 200/语言,先切、切完立即隔离(只落 review_id、不读文本)
-  ④ dev   50–100
-  ⑤ train = 机械合格帧剩余全部
+  ③  gold   ← 三语等额 200/语言,先切、切完立即隔离(只落 review_id、不读文本)
+  ③' stress ← 关键词检索出候选 id 可在 prompt 冻结前(只落 candidate id、不读正文);
+              prompt 冻结后人工盲标 → 定 final → 以 role=stress 写回 manifest(见 stress_preregistration.md)
+  ④  dev    50–100
+  ⑤  train  = 机械合格帧剩余全部(后减前 = pilot + gold + stress-final + stress-screening-log)
 ```
+
+> ⚠️ **③' 必须在 ⑤ 之前**:stress 与 train 同源(都从帧剩余切),若先切 train、后抽 stress 会重叠 → 泄漏。**train 未切前不许切**,以保此序。stress 的检索(机械)可现在做;**打开候选正文、人工入选必须在 prompt 冻结之后**(同 gold 手标那道门)。
 
 > ⚠️ **顺序防泄漏(2026-08-11 强化)**:③ 切 gold **ID** 可以在冻结 prompt 之前(只落 review_id、不读文本);但**打开 gold 文本、人工标注必须在 prompt 冻结之后**——否则先读考题再出题,gold 独立性被污染。见 gold 抽样备忘 §1。
 >
