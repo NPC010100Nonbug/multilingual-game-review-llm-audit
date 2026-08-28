@@ -1,0 +1,5 @@
+keyword_class,candidates_ge_min_len,quota,drawn,shortfall,min_len,seed,note
+class1_anticheat,3,0,0,0,15,20260824-ja-hardneg-v1,"pre-registered UNAVAILABLE (§5.1 option A): 96.3% of 320 frame hits consumed by stress retrieval; corpus size, not lexicon"
+class2_tech_compat,402,35,35,0,15,20260824-ja-hardneg-v1,
+class3_price_cosmetic,164,34,34,0,15,20260824-ja-hardneg-v1,
+class4_difficulty_balance,215,35,35,0,15,20260824-ja-hardneg-v1,

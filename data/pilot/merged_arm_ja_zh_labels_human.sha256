@@ -1,0 +1,5 @@
+# frozen 2026-08-27 by human (Yifan); codebook v1.0
+# 301 zh/ja prompt-tuning answer-key rows. Frozen BEFORE any
+# DeepSeek run on these ids. Do not edit after this point.
+b799c47d4bef3d2fe552273601f9c886998668bb658580ccab6f1baf29468723  merged_arm_zh_labels_human.jsonl  # n=157
+41d9f24f545a699033ed21e3d9c9d545352f4a34a264074e42e01c2f0bd1ffe6  merged_arm_ja_labels_human.jsonl  # n=144

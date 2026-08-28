@@ -1,0 +1,5 @@
+keyword_class,candidates_ge_min_len,quota,drawn,shortfall,min_len,seed,note
+class1_anticheat,97,28,28,0,15,20260824-zh-hardneg-v1,
+class2_tech_compat,1345,28,28,0,15,20260824-zh-hardneg-v1,
+class3_price_cosmetic,318,28,28,0,15,20260824-zh-hardneg-v1,
+class4_difficulty_balance,320,28,28,0,15,20260824-zh-hardneg-v1,
