@@ -15,6 +15,13 @@ WHAT IT DOES
       ABSENT rows only.  The hardneg arm is keyword-selected, so some of its
       rows really are PRESENT; scoring those as false positives overstated the
       rate (that is what produced the wrong 14/80 figure).
+    - *** the erratum-D three-way Chinese report ***, mandatory since 2026-08-27:
+      Chinese keyword-selected rows are reported as (1) all keyword candidates
+      merged, (2) class1_anticheat alone, and (3) the class2-4 remainder --
+      never (3) alone.  Reporting only the remainder once hid the fact that the
+      whole v0.2/v0.4 Chinese gap sat inside class1_anticheat.  A Japanese
+      hardneg control is printed beside it because Japanese has no class1 family
+      at all, so the two languages are not answering the same exam.
     - subtype / procedural_facet agreement on rows both sides call PRESENT
     - output-constraint legality violations (the 6 hard constraints)
   Pass two or more --pred files for a side-by-side comparison.
@@ -46,6 +53,22 @@ NO_LABEL = "NO_LABEL"
 CONFUSION_COLS = LABELS + [NO_LABEL]
 
 REPORT_LANGS = ("en", "ja", "zh")
+# Every arm whose Chinese rows were selected by a frozen keyword list.  View (1)
+# of the erratum-D report is the union of these; if a new keyword arm is added
+# and not listed here, view (1) silently stops being "all candidates", so
+# v2_score refuses to run rather than print a quietly incomplete merge.
+ZH_KEYWORD_ARMS = ("hardneg", "hardneg_class1_zh")
+# Short labels for the fixed-width A/B table, whose metric column is 26 chars.
+ERRATUM_D_SHORT = {"(1) zh keyword candidates, merged": "FP zh keyword (merged)",
+                   "(2) zh class1_anticheat alone": "FP zh class1_anticheat",
+                   "(3) zh class2-4 remainder": "FP zh class2-4 remainder",
+                   "[control] ja hardneg, no class1": "FP ja hardneg (control)"}
+ERRATUM_D_VIEWS = (
+    ("(1) zh keyword candidates, merged", lambda lang, arm: lang == "zh" and arm in ZH_KEYWORD_ARMS),
+    ("(2) zh class1_anticheat alone",     lambda lang, arm: arm == "hardneg_class1_zh"),
+    ("(3) zh class2-4 remainder",         lambda lang, arm: lang == "zh" and arm == "hardneg"),
+    ("[control] ja hardneg, no class1",   lambda lang, arm: lang == "ja" and arm == "hardneg"),
+)
 
 # 0.15 is a REFERENCE LINE, not a gate for this script.
 # freeze/preregistration.md §2 sets "三语间 κ 落差 ≤ 0.15" for test #2, which is
@@ -431,6 +454,15 @@ def v2_score(prediction_path, gold):
     overall = v2_cell()
     by_language = defaultdict(v2_cell)
     by_arm = defaultdict(v2_cell)
+    by_zh_view = {name: v2_cell() for name, _ in ERRATUM_D_VIEWS}
+    stray = sorted({row["arm"] for row in gold.values()
+                    if row.get("language") == "zh" and str(row["arm"]).startswith("hardneg")
+                    and row["arm"] not in ZH_KEYWORD_ARMS})
+    if stray:
+        raise ValueError(
+            "erratum-D view (1) must merge ALL Chinese keyword arms, but these are not declared "
+            f"in ZH_KEYWORD_ARMS: {stray}.  Add them there, and record the change in "
+            "decision_log.md, rather than letting the merged view quietly exclude them.")
     # Which arms supply each language's human-PRESENT rows.  If the mixes
     # differ, a per-language comparison is confounded with sampling design:
     # a language whose positives come from the purposive diagnostic/hardneg
@@ -464,6 +496,9 @@ def v2_score(prediction_path, gold):
         v2_tally(overall, human_label, model_label)
         v2_tally(by_language[human.get("language") or "unknown"], human_label, model_label)
         v2_tally(by_arm[human["arm"]], human_label, model_label)
+        for view_name, belongs in ERRATUM_D_VIEWS:
+            if belongs(human.get("language"), human["arm"]):
+                v2_tally(by_zh_view[view_name], human_label, model_label)
         if human["arm"] == "hardneg":
             hardneg_rows += 1
             hardneg_loose_fp += model_label == "PRESENT"
@@ -485,6 +520,7 @@ def v2_score(prediction_path, gold):
             "parse_rate": parsed_ok / len(gold), "schema_rate": schema_ok / len(gold),
             "no_label_reasons": no_label_reasons, "no_label": overall["no_label"],
             "overall": v2_rates(overall), "by_language": language_rates, "by_arm": arm_rates,
+            "zh_views": {name: v2_rates(cell) for name, cell in by_zh_view.items()},
             "hardneg_strict": hardneg["fp_pair"],
             "hardneg_loose": (hardneg_loose_fp, hardneg_rows),
             "absent_fp": v2_rates(overall)["fp_pair"],
@@ -543,6 +579,19 @@ def v2_print(result):
         rates = result["by_arm"][arm]
         print(f"  {arm:<12}{rates['n']:>5}{rates['no_label']:>6}{v2_fraction(rates['recall_pair']):>17}"
               f"{v2_fraction(rates['fp_pair']):>15}")
+    views = result.get("zh_views") or {}
+    if any(views.get(name, {}).get("n") for name, _ in ERRATUM_D_VIEWS[:3]):
+        print("\nerratum-D three-way Chinese report (mandatory since 2026-08-27; "
+              "reporting (3) alone is not permitted):")
+        print(f"  {'view':<36}{'n':>5}{'human ABSENT':>14}{'FP on ABSENT':>15}{'PRESENT recall':>17}")
+        for name, _ in ERRATUM_D_VIEWS:
+            rates = views.get(name)
+            if not rates or not rates["n"]:
+                continue
+            print(f"  {name:<36}{rates['n']:>5}{rates['human_absent']:>14}"
+                  f"{v2_fraction(rates['fp_pair']):>15}{v2_fraction(rates['recall_pair']):>17}")
+        print("  (1) = (2) + (3) by construction; (2) and (3) are disjoint.  The control row exists "
+              "because Japanese\n      has no class1 family, so ja and zh keyword rows are not the same exam.")
     print(f"hardneg FP (strict, human-ABSENT denominator) : {v2_fraction(result['hardneg_strict'])}")
     print(f"hardneg FP (loose, all hardneg rows; legacy)  : {v2_fraction(result['hardneg_loose'])}")
     print(f"FP on every human-ABSENT row (all 3 arms)     : {v2_fraction(result['absent_fp'])}")
@@ -594,6 +643,13 @@ def separated_score_main():
         row("cross-lang kappa gap",
             [f"{r['kappa_gap']:.3f}" if r["kappa_gap"] == r["kappa_gap"] else "n/a" for r in results])
         row("hardneg FP (strict)", [v2_fraction(r["hardneg_strict"]) for r in results])
+        # Erratum D applies to the A/B table too: a side-by-side that showed only the
+        # class2-4 remainder would report the two versions as identical in Chinese.
+        for name, _ in ERRATUM_D_VIEWS:
+            if any((r.get("zh_views") or {}).get(name, {}).get("n") for r in results):
+                row(ERRATUM_D_SHORT[name],
+                    [v2_fraction(r["zh_views"][name]["fp_pair"]) if name in (r.get("zh_views") or {}) else "-"
+                     for r in results])
         row("FP on all human-ABSENT", [v2_fraction(r["absent_fp"]) for r in results])
 
 

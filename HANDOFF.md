@@ -88,6 +88,8 @@
 ### 已被否掉的替代方案(别再走回头路)
 - ❌ "按比例每段随机抽几百条"当成能补数据 —— 抽样只作用于已下载数据,变不出没采到的评论。
 - ❌ "先拉 2023→now 再对齐" —— 逃不过密度天花板。
+- ❌ **切 train 时直接扣除全部 59,811 条压力候选**(2026-08-27 提出并当日撤回,从未执行)—— 检索是穷尽的(`05_stress_retrieve.py` 无截断),扣掉 = train 里 ban/price/外挂/封号/氪金 等词族出现率归零,且三语强度不等(EN 15.3% / ZH 9.5% / **JA 25.4%**),与 `stress_preregistration.md` §4.B 登记的「代价极小」冲突。详见 decision_log 2026-08-27。
+- ⏸️ **「预抽 2,791 条筛读队列」替代方案(B)** —— 因 §9「稀疏格扩展词表」在仓库中不存在(见下方待办 8),`screened ⊆ queue` 包含链无法保证,**暂不可用**。
 - ❌ 字数下限过滤减量 —— 客户端过滤不省 API;且引入选择偏差(不公平评论可能是短句怒骂)+ 跨语言不可比(50 个 CJK 字 ≫ 50 个拉丁字母,把语言混淆又带回来了)。
 
 ---
@@ -102,6 +104,8 @@
 5. **LLM 双标注**:弱标注(训练用)+ zero-shot(eval 用);**付费前估成本+确认**。生产阅卷员候选 = **DeepSeek V4 Pro**,见 §5.5 铁律。
 6. **微调 `xlm-roberta-base`(ASUS)**;三方 eval + 跨语言迁移矩阵。
 7. **README**:诚实写"审计→训练"的由来 + 记录 Steam API 深度天花板这条 limitation。
+8. **🚧 阻断项:§9 稀疏格「预先冻结的扩展词表」不存在。** `grep -rn "扩展词表" freeze/` 全库只命中 `stress_preregistration.md` §9 那一句自身;`05_stress_retrieve.py` 无 extension/sparse 分支;`stress_keywords_en_zh_external_addendum_draft.md` 是**草稿且只有 EN/ZH**。而最需要它的是日语(`access_exclusion` 38 条候选、`sanction` 63 条,均 <120)。**压力集人工盲标开工前须由 Yifan 裁决:补齐并冻结三语扩展词表 / 登记放弃并把 §9 改为「候选池耗尽即停」/ 其他。**
+9. **切分顺序(2026-08-27 复核后确认,方案 C)**:prompt 冻结 → 压力候选人工盲标 → stress-final 以 `role=stress` 写回 `split_manifest.csv` + 实读未入选者写 `stress_screening_log.csv` → 切 dev → 切 train(后减前 = pilot + gold + stress-final + stress-screening-log)。**train 规模由学习曲线决定,不预设上限;已作废的「日语 7,600」不得再引用。**
 
 ### 5.5 阅卷员模型铁律(选 DeepSeek V4 Pro 后必须守)
 - **调 == 冻 == 部署,必须同一个带版本号的模型。** 若用 DeepSeek V4 Pro 打标,则 prompt 必须**在 DeepSeek V4 Pro 上调、在其上冻结、在其上部署**;**不得**在 Claude 上调好再换 DeepSeek 跑(prompt 会随模型漂移)。
@@ -114,7 +118,11 @@
 ## 6. 关键文档索引
 
 - **数据池切分规格(单一事实源):`data_split_spec.md`(仓库根);名单:`data/splits/split_manifest.csv`;保留区:`data/splits/reserved_ids.csv`。**
-- **prompt 阶段人工答案键(247 条,可跟踪):`data/pilot/{pilot_prompt,diagnostic_arm,hardneg_arm}_labels_human.jsonl`;由 `scripts/03f_extract_arm_labels.py` 从本地 xlsx 抽出。诊断臂/硬负例臂建表脚本:`scripts/06_build_diagnostic_arm.py`、`scripts/07_build_hardneg_arm.py`。**
+- **prompt 阶段人工答案键(现共 548 条,可跟踪):**
+  - EN 侧 247:`data/pilot/{pilot_prompt,diagnostic_arm,hardneg_arm}_labels_human.jsonl`(`scripts/03f_extract_arm_labels.py`)。
+  - **ZH/JA 侧 301(2026-08-27 冻结):`data/pilot/merged_arm_{zh,ja}_labels_human.jsonl` + 收据 `merged_arm_ja_zh_labels_human.sha256`(`scripts/12_freeze_arm_labels_ja_zh.py`)。臂含已登记拆分的 `hardneg_class1_zh`。**
+  - 跑批打包:`scripts/08_build_eval_input.py --keyset {en247,jazh301,all548} --run-id <dir>`;jazh301 的 config 变体 = `configs/models/deepseek_v4_pro_prompt_{v0_2,v0_4_iso}_jazh301.json`(仅放宽 `scope_guard.allowed_sources`,prompt 文件与模型参数与父条件逐字节相同,父 config 不动以保留 dev247 的 hash 溯源)。
+- **(旧行)prompt 阶段人工答案键(247 条,可跟踪):`data/pilot/{pilot_prompt,diagnostic_arm,hardneg_arm}_labels_human.jsonl`;由 `scripts/03f_extract_arm_labels.py` 从本地 xlsx 抽出。诊断臂/硬负例臂建表脚本:`scripts/06_build_diagnostic_arm.py`、`scripts/07_build_hardneg_arm.py`。**
 - codebook 参考文献库:`codebook/codebook_framework_references.md`。
 - 决策全记录:`decision_log.md`(仓库根)。
 - 训练版指导手册(现行执行文档):`~/Documents/找老板/多语言游戏评论LLM_训练版_项目指导手册_v3_2026-08-04.md`。
