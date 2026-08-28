@@ -1,0 +1,123 @@
+{
+  "schema_version": "1.1",
+  "condition_id": "deepseek_v4_pro_prompt_v0_4_iso_jazh301",
+  "status": "draft_calibration_only",
+  "purpose": "Development-only API configuration for multilingual perceived-unfairness review annotation.",
+  "provider": {
+    "name": "deepseek",
+    "api_compatibility": "openai_chat_completions",
+    "api_key_env": "DEEPSEEK_API_KEY",
+    "base_url": "https://api.deepseek.com",
+    "chat_completions_path": "/chat/completions"
+  },
+  "model": {
+    "id": "deepseek-v4-pro",
+    "display_name": "DeepSeek V4 Pro",
+    "accepted_returned_model_ids": [
+      "deepseek-v4-pro"
+    ],
+    "model_version_note": "Record the model value returned by every API response in the run manifest. Any provider-side model revision creates a new measurement condition."
+  },
+  "generation": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 1200,
+    "stream": false,
+    "thinking": {
+      "type": "disabled"
+    },
+    "response_format": {
+      "type": "json_object"
+    },
+    "json_output_requirement": "The system prompt must explicitly contain the word JSON, include the required object shape, and require exactly one JSON object with no markdown or rationale."
+  },
+  "transport": {
+    "connect_timeout_seconds": 10,
+    "read_timeout_seconds": 90,
+    "overall_timeout_seconds": 120,
+    "retry": {
+      "max_attempts": 3,
+      "backoff_seconds": [
+        2,
+        8
+      ],
+      "retry_on": [
+        "connection_error",
+        "timeout",
+        "http_429",
+        "http_5xx"
+      ],
+      "non_retryable_measurement_failures": [
+        "empty_content",
+        "invalid_json",
+        "schema_invalid"
+      ]
+    }
+  },
+  "prompt": {
+    "path": "configs/prompts/annotation_prompt_v0.4_iso_draft.md",
+    "message_layout": "Use the file's System Instruction section as the system message. Send one allowed review-input JSON object as the user message.",
+    "sha256": "TO_BE_FILLED_WHEN_FROZEN"
+  },
+  "io": {
+    "input_jsonl": "data/runs/<run_id>/input.jsonl",
+    "answer_key_jsonl": "data/runs/<run_id>/answer_key.jsonl",
+    "output_jsonl": "data/runs/<run_id>/responses.jsonl",
+    "manifest_json": "data/runs/<run_id>/manifest.json",
+    "raw_response_jsonl": "data/runs/<run_id>/raw_responses.jsonl",
+    "path_rule": "Create an approved, de-identified development-only input file before calling the API. Never send author identity, human labels, sampling provenance, or seed fields."
+  },
+  "scope_guard": {
+    "allowed_sources": [
+      "diagnostic_arm",
+      "hardneg_arm",
+      "merged_arm_control",
+      "merged_arm_diagnostic",
+      "merged_arm_hardneg",
+      "merged_arm_hardneg_class1_zh",
+      "pilot_prompt"
+    ],
+    "forbidden_sources": [
+      "gold",
+      "stress",
+      "dev",
+      "train"
+    ],
+    "enforcement": "Abort before any request if input metadata or path indicates a forbidden source. Gold and stress must remain unopened during prompt calibration."
+  },
+  "run_record": {
+    "required_fields": [
+      "condition_id",
+      "prompt_sha256",
+      "model_requested",
+      "model_returned",
+      "base_url",
+      "generation",
+      "input_schema_version",
+      "parser_version",
+      "started_at",
+      "finished_at",
+      "attempt_count",
+      "finish_reason",
+      "usage"
+    ],
+    "write_raw_response_before_parsing": true,
+    "parser_rule": "Parse each response as JSON, validate every controlled field against the prompt schema, and retain parse failures rather than silently replacing them."
+  },
+  "pricing": {
+    "checked_at": "2026-08-19",
+    "source": "https://api-docs.deepseek.com/quick_start/pricing/",
+    "basis": "DeepSeek V4 Pro cache-miss / output peak rates; this is a conservative pre-run ceiling, not an invoice.",
+    "usd_per_million_tokens": {
+      "input_cache_miss_peak": 1.32,
+      "output_peak": 3.96
+    },
+    "estimate_output_tokens_per_review": 180
+  },
+  "freeze_rule": "This file is a draft calibration condition. Do not use it for gold, stress, or production weak labeling until the prompt, returned model version, runtime settings, preprocessing, and parser have been evaluated on the approved development arms and frozen by Yifan.",
+  "derived_from": {
+    "config": "configs/models/deepseek_v4_pro_prompt_v0_4_iso.json",
+    "config_sha256": "f910e2607d93f821d3106cb9beea6977eb4829411b06efc8aa36b45388f22044",
+    "note": "2026-08-27 jazh301 variant. Identical to the parent condition in model, temperature, top_p, max_tokens, response_format and prompt FILE (byte-identical path + sha256) — per HANDOFF §5.5 调==冻==部署必须同一个带版本号的模型. The ONLY difference is scope_guard.allowed_sources, widened to admit the zh/ja merged arms frozen on 2026-08-27. The parent config file is NOT edited, so its config_sha256 still matches the 2026-08-2x dev247 manifests and those runs stay reproducible. gold/stress/dev/train remain forbidden."
+  }
+}
